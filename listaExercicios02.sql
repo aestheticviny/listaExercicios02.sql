@@ -5,7 +5,6 @@ BEGIN
 END //
 DELIMITER ;
 
--- Teste da stored procedure
 CALL sp_ListarAutores();
 
 DELIMITER //
@@ -18,7 +17,6 @@ BEGIN
 END //
 DELIMITER ;
 
--- Teste da stored procedure
 CALL sp_LivrosPorCategoria('Romance');
 
 DELIMITER //
@@ -31,7 +29,6 @@ BEGIN
 END //
 DELIMITER ;
 
--- Teste da stored procedure
 SET @total := 0;
 CALL sp_ContarLivrosPorCategoria('Ciência', @total);
 SELECT @total;
@@ -49,7 +46,6 @@ BEGIN
 END //
 DELIMITER ;
 
--- Teste da stored procedure
 SET @temLivros := NULL;
 CALL sp_VerificarLivrosCategoria('História', @temLivros);
 SELECT @temLivros;
@@ -63,7 +59,6 @@ BEGIN
 END //
 DELIMITER ;
 
--- Teste da stored procedure
 CALL sp_LivrosAteAno(2010);
 
 DELIMITER //
@@ -90,5 +85,64 @@ BEGIN
 END //
 DELIMITER ;
 
--- Teste da stored procedure
+
 CALL sp_TitulosPorCategoria('Ficção Científica');
+
+DELIMITER //
+CREATE PROCEDURE sp_AdicionarLivro(IN livroTitulo VARCHAR(255), IN editoraID INT, IN anoPublicacao INT, IN numPaginas INT, IN categoriaID INT)
+BEGIN
+    DECLARE EXIT HANDLER FOR 1062
+    BEGIN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Livro com título duplicado.';
+    END;
+
+    INSERT INTO Livro (Titulo, Editora_ID, Ano_Publicacao, Numero_Paginas, Categoria_ID)
+    VALUES (livroTitulo, editoraID, anoPublicacao, numPaginas, categoriaID);
+END //
+DELIMITER ;
+
+
+CALL sp_AdicionarLivro('A Jornada', 1, 2000, 320, 1); -- Isso deve gerar um erro de duplicação de título
+CALL sp_AdicionarLivro('Novo Livro', 2, 2022, 250, 5); -- Isso deve adicionar um novo livro
+
+DELIMITER //
+CREATE PROCEDURE sp_AutorMaisAntigo(OUT autorNome VARCHAR(255))
+BEGIN
+    SELECT Nome INTO autorNome
+    FROM Autor
+    ORDER BY Data_Nascimento
+    LIMIT 1;
+END //
+DELIMITER ;
+
+
+SET @nomeMaisAntigo := NULL;
+CALL sp_AutorMaisAntigo(@nomeMaisAntigo);
+SELECT @nomeMaisAntigo;
+
+DELIMITER //
+CREATE PROCEDURE sp_LivrosPorCategoria(IN categoriaNome VARCHAR(100))
+BEGIN
+   
+    
+    SELECT Livro.Titulo
+    FROM Livro
+    INNER JOIN Categoria ON Livro.Categoria_ID = Categoria.Categoria_ID
+    WHERE Categoria.Nome = categoriaNome;
+END //
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE sp_LivrosESeusAutores()
+BEGIN
+    SELECT Livro.Titulo, Autor.Nome, Autor.Sobrenome
+    FROM Livro
+    INNER JOIN Autor_Livro ON Livro.Livro_ID = Autor_Livro.Livro_ID
+    INNER JOIN Autor ON Autor_Livro.Autor_ID = Autor.Autor_ID;
+END //
+DELIMITER ;
+
+
+CALL sp_LivrosESeusAutores();
+
